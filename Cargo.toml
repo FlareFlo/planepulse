@@ -1,0 +1,10 @@
+[package]
+name = "planepulse"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+geoutils = "0.5.1"
+reqwest = { version = "0.12.20", features = ["rustls-tls", "json"] }
+serde = { version = "1.0", features = ["serde_derive"]}
+tokio = { version = "1.45.1", features = ["rt", "rt-multi-thread", "macros"] }
