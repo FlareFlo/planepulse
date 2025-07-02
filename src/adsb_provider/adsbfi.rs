@@ -4,6 +4,7 @@ use geoutils::Location;
 use tokio::time::{sleep_until, Instant};
 use crate::adsb_provider::{AdsbAircraft, AdsbProvider};
 use serde::{Deserialize, Deserializer};
+use crate::config::Config;
 
 pub struct AdsbFi {
 	last_fetch: Instant,
@@ -33,7 +34,7 @@ impl AdsbProvider for AdsbFi {
 		}).collect()
 	}
 
-	fn new() -> Self {
+	fn new(_: &Config) -> Self {
 		Self {
 			// This sucks but eh
 			last_fetch: Instant::now() - Duration::from_secs(10000),

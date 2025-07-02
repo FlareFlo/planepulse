@@ -1,6 +1,7 @@
 pub mod adsbfi;
 
 use geoutils::Location;
+use crate::config::Config;
 
 #[derive(Debug)]
 pub struct AdsbAircraft {
@@ -15,7 +16,7 @@ pub struct AdsbAircraft {
 pub trait AdsbProvider {
 	async fn get_nearby(&mut self) -> Vec<AdsbAircraft>;
 	
-	fn new() -> Self;
+	fn new(c: &Config) -> Self;
 }
 
 
