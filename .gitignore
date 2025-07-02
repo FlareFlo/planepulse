@@ -1,3 +1,6 @@
 /target
-configs/
 .idea
+
+# Add new configs below
+configs/*
+!configs/sample.toml

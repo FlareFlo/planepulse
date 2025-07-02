@@ -1,0 +1,13 @@
+[Site]
+lat = 33
+lon = 44
+elevation = 50 # meters
+
+[Notification]
+discord_webhook = "webhook URL"
+
+[Weather]
+openweathermap_api_key = "key"
+
+[Adsb]
+adsbfi = true # keep as is, there is no api key neccesary
