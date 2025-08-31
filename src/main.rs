@@ -1,6 +1,6 @@
 use crate::adsb_provider::AdsbProvider;
 use crate::adsb_provider::adsbfi::AdsbFi;
-use crate::config::{Config, Notification, NotificationConfig, Site};
+use crate::config::{Conditions, Config, Notification, NotificationConfig, Site};
 use crate::weather_provider::WeatherProvider;
 use crate::weather_provider::openweathermap::OpenWeathermap;
 use geoutils::Distance;
@@ -27,37 +27,24 @@ async fn main() {
     .unwrap();
 
     let config = Config::from_path("configs/ohw.toml");
-    let prov = AdsbFi::new(&config);
-    let w = OpenWeathermap::new(&config);
+    let provider = AdsbFi::new(&config);
+    let weather = OpenWeathermap::new(&config);
 
-    main_loop(prov, w, config.notification, config.site).await;
+    main_loop(config, provider, weather).await;
 }
 
 async fn main_loop(
+    Config {site, conditions, mut notification, ..}: Config,
     mut provider: impl AdsbProvider,
-    mut _weathermap: impl WeatherProvider,
-    mut notification: NotificationConfig,
-    site: Site,
+    _weathermap: impl WeatherProvider,
 ) {
     loop {
-        let aircraft = provider.get_nearby().await;
-        let total_count = aircraft.len();
-        let candidates = aircraft
-            .into_iter()
-            .filter(|candidate| {
-                candidate.is_candidate(
-                    site.location(),
-                    Distance::from_meters(5000.0),
-                    Distance::from_meters(1524.0),
-                )
-            })
-            .collect::<Vec<_>>();
+        let aircraft = provider.get_nearby(&conditions, &site.location()).await;
         info!(
-            "Got {} aircraft, {} of which are candidates",
-            total_count,
-            candidates.len()
+            "Posting {} aircraft",
+            aircraft.len()
         );
-        for candidate in candidates {
+        for candidate in aircraft {
             notification.notify(&candidate).await;
             warn!("Posted {}", candidate.hex);
         }

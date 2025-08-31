@@ -18,6 +18,7 @@ pub struct Config {
     pub notification: NotificationConfig,
     pub weather: Weather,
     pub adsb: Adsb,
+    pub conditions: Conditions,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -82,4 +83,22 @@ pub struct Weather {
 #[derive(Debug, serde::Deserialize)]
 pub struct Adsb {
     pub adsbfi: bool,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Conditions {
+    /// Meters
+    max_distance: f64,
+    /// Meters
+    max_altitude: f64,
+}
+
+impl Conditions {
+    pub fn max_distance(&self) -> Distance {
+        Distance::from_meters(self.max_distance)
+    }
+
+    pub fn max_altitude(&self) -> Distance {
+        Distance::from_meters(self.max_altitude)
+    }
 }

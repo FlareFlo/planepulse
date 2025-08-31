@@ -1,13 +1,17 @@
-[Site]
+[site]
 lat = 33
 lon = 44
 elevation = 50 # meters
 
-[Notification]
+[notification]
 discord_webhook = "webhook URL"
 
-[Weather]
+[weather]
 openweathermap_api_key = "key"
 
-[Adsb]
+[adsb]
 adsbfi = true # keep as is, there is no api key neccesary
+
+[conditions]
+max_distance = 5000 # meters
+max_altitude = 1524 # meters

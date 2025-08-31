@@ -1,5 +1,5 @@
 use crate::adsb_provider::{AdsbAircraft, AdsbProvider};
-use crate::config::Config;
+use crate::config::{Conditions, Config};
 use geoutils::{Distance, Location};
 use serde::{Deserialize, Deserializer};
 use std::str::FromStr;
@@ -12,7 +12,7 @@ pub struct AdsbFi {
 }
 
 impl AdsbProvider for AdsbFi {
-    async fn get_nearby(&mut self) -> Vec<AdsbAircraft> {
+    async fn get_nearby(&mut self, conditions: &Conditions, location: &Location) -> Vec<AdsbAircraft> {
         // Cooldown of 30s, we play it safe
         sleep_until(self.last_fetch + Duration::from_secs_f32(35.0)).await;
         self.last_fetch = Instant::now();
@@ -35,6 +35,7 @@ impl AdsbProvider for AdsbFi {
                     hex: r.hex.trim().to_owned(),
                 })
             })
+            .filter(|aircraft|aircraft.is_candidate(conditions, location))
             .collect()
     }
 

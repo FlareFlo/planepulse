@@ -1,6 +1,6 @@
 pub mod adsbfi;
 
-use crate::config::Config;
+use crate::config::{Conditions, Config};
 use geoutils::{Distance, Location};
 
 #[derive(Debug)]
@@ -16,16 +16,15 @@ impl AdsbAircraft {
     /// Checks if aircraft can/should be posted
     pub fn is_candidate(
         &self,
-        location: Location,
-        max_distance: Distance,
-        max_altitude: Distance,
+        conditions: &Conditions,
+        location: &Location,
     ) -> bool {
         let d = location.haversine_distance_to(&self.location);
-        if d.meters() > max_distance.meters() {
+        if d.meters() > conditions.max_distance().meters() {
             return false;
         }
 
-        if self.altitude.meters() > max_altitude.meters() {
+        if self.altitude.meters() > conditions.max_altitude().meters() {
             return false;
         }
 
@@ -34,7 +33,7 @@ impl AdsbAircraft {
 }
 
 pub trait AdsbProvider {
-    async fn get_nearby(&mut self) -> Vec<AdsbAircraft>;
+    async fn get_nearby(&mut self, conditions: &Conditions, location: &Location) -> Vec<AdsbAircraft>;
 
     fn new(c: &Config) -> Self;
 }
