@@ -1,5 +1,3 @@
-use tracing::warn;
-use tracing::info;
 use crate::adsb_provider::AdsbProvider;
 use crate::adsb_provider::adsbfi::AdsbFi;
 use crate::config::{Config, Notification, NotificationConfig, Site};
@@ -9,6 +7,8 @@ use geoutils::Distance;
 use std::env;
 use std::process::exit;
 use tracing::error;
+use tracing::info;
+use tracing::warn;
 use tracing_subscriber::FmtSubscriber;
 
 mod adsb_provider;
@@ -24,7 +24,7 @@ async fn main() {
         error!("Got shutdown signal");
         exit(1);
     })
-        .unwrap();
+    .unwrap();
 
     let config = Config::from_path("configs/ohw.toml");
     let prov = AdsbFi::new(&config);
@@ -58,12 +58,7 @@ async fn main_loop(
             candidates.len()
         );
         for candidate in candidates {
-            let n = Notification {
-                distance: site.location().haversine_distance_to(&candidate.location),
-                location: candidate.location,
-                display_name: candidate.flight,
-            };
-            notification.notify(n).await;
+            notification.notify(&candidate).await;
             warn!("Posted {}", candidate.hex);
         }
     }

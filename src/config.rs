@@ -1,3 +1,4 @@
+use crate::adsb_provider::AdsbAircraft;
 use geoutils::{Distance, Location};
 use serenity::all::Webhook;
 use serenity::builder::{Builder, ExecuteWebhook};
@@ -40,7 +41,7 @@ pub struct NotificationConfig {
 }
 
 impl NotificationConfig {
-    pub async fn notify(&mut self, message: Notification) {
+    pub async fn notify(&mut self, ac: &AdsbAircraft) {
         if let Some(discord_webhook) = &self.discord_webhook {
             let webhook = Webhook::from_url(
                 self.serenity_http
@@ -49,7 +50,12 @@ impl NotificationConfig {
             )
             .await
             .unwrap();
-            let embed = ExecuteWebhook::new().content(message.display_name);
+            let embed = ExecuteWebhook::new().content(format!(
+                "{} is at {:.0} meters https://globe.adsbexchange.com/?icao={}",
+                ac.desc,
+                ac.altitude.meters(),
+                ac.hex
+            ));
             webhook
                 .execute(
                     self.serenity_http.as_ref().expect("infallible"),
