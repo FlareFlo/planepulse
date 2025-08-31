@@ -1,19 +1,70 @@
-use std::env;
-use crate::adsb_provider::adsbfi::AdsbFi;
+use tracing::warn;
+use tracing::info;
 use crate::adsb_provider::AdsbProvider;
-use crate::config::Config;
-use crate::weather_provider::openweathermap::OpenWeathermap;
+use crate::adsb_provider::adsbfi::AdsbFi;
+use crate::config::{Config, Notification, NotificationConfig, Site};
 use crate::weather_provider::WeatherProvider;
+use crate::weather_provider::openweathermap::OpenWeathermap;
+use geoutils::Distance;
+use std::env;
+use std::process::exit;
+use tracing::error;
+use tracing_subscriber::FmtSubscriber;
 
 mod adsb_provider;
-mod weather_provider;
 mod config;
+mod weather_provider;
 
 #[tokio::main]
 async fn main() {
+    tracing::subscriber::set_global_default(FmtSubscriber::builder().finish())
+        .expect("tracing setup failed");
+
+    ctrlc::set_handler(move || {
+        error!("Got shutdown signal");
+        exit(1);
+    })
+        .unwrap();
+
     let config = Config::from_path("configs/ohw.toml");
-    //let mut prov = AdsbFi::new(&config);
-    //dbg!(&prov.get_nearby().await);
-    let mut w = OpenWeathermap::new(&config);
-    dbg!(w.get_weather().await);
+    let prov = AdsbFi::new(&config);
+    let w = OpenWeathermap::new(&config);
+
+    main_loop(prov, w, config.notification, config.site).await;
+}
+
+async fn main_loop(
+    mut provider: impl AdsbProvider,
+    mut _weathermap: impl WeatherProvider,
+    mut notification: NotificationConfig,
+    site: Site,
+) {
+    loop {
+        let aircraft = provider.get_nearby().await;
+        let total_count = aircraft.len();
+        let candidates = aircraft
+            .into_iter()
+            .filter(|candidate| {
+                candidate.is_candidate(
+                    site.location(),
+                    Distance::from_meters(5000.0),
+                    Distance::from_meters(1524.0),
+                )
+            })
+            .collect::<Vec<_>>();
+        info!(
+            "Got {} aircraft, {} of which are candidates",
+            total_count,
+            candidates.len()
+        );
+        for candidate in candidates {
+            let n = Notification {
+                distance: site.location().haversine_distance_to(&candidate.location),
+                location: candidate.location,
+                display_name: candidate.flight,
+            };
+            notification.notify(n).await;
+            warn!("Posted {}", candidate.hex);
+        }
+    }
 }
